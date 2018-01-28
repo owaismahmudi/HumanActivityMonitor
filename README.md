@@ -4,7 +4,7 @@
 
 "Human Activity Recognition - HAR - has emerged as a key research area in the last years and is gaining increasing attention by the pervasive computing research community (see picture below, that illustrates the increasing number of publications in HAR with wearable accelerometers), especially for the development of context-aware systems. There are many potential applications for HAR, like: elderly monitoring, life log systems for monitoring energy expenditure and for supporting weight-loss programs, and digital assistants for weight lifting exercises.
 
-![HAR](http://web.archive.org/web/20161224072740im_/http://groupware.les.inf.puc-rio.br/static/WLE/on-body-sensing-schema.png)
+<img align="right" src="http://web.archive.org/web/20161224072740im_/http://groupware.les.inf.puc-rio.br/static/WLE/on-body-sensing-schema.png" width="200" height="300" />
 
 This human activity recognition research has traditionally focused on discriminating between different activities, i.e. to predict "which" activity was performed at a specific point in time (like with the Daily Living Activities dataset above). The approach we propose for the Weight Lifting Exercises dataset is to investigate "how (well)" an activity was performed by the wearer. The "how (well)" investigation has only received little attention so far, even though it potentially provides useful information for a large variety of applications,such as sports training.
 

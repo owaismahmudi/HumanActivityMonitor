@@ -1,0 +1,144 @@
+---
+title: "Prediction Assignment Writeup"
+author: "Owais Mahmudi"
+date: "1/23/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Background
+
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: http://web.archive.org/web/20161224072740/http:/groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset).
+
+
+## Data
+
+The training data for this project are available here:
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv
+
+The test data are available here:
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv
+
+
+The data for this project can be downloded from [here](http://web.archive.org/web/20161224072740/http:/groupware.les.inf.puc-rio.br/har). Please cite them if you use the dataset as they have been very generous in allowing their data to be used for this kind of assignment.
+
+## Task
+
+The goal of this project is to predict the manner in which the subjects did the exercise. This is the "classe" variable in the training set. One may use any of the other variables to predict with. The report should mention, how the model was built, how was it cross validated, what was the expected out of sample error, and the reasoning behind the choices made. The prediction model should also be used to predict 20 different test cases towards the end.
+
+
+Lets load the relevant libraries first:
+
+```{r add_libraries}
+# add libraries
+suppressMessages(library(lubridate))
+suppressMessages(library(caret))
+suppressMessages(library(randomForest))
+```
+
+Load the files from the given urls:
+
+```{r download_load_input_files}
+trainUrl <- "http://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
+testUrl <- "http://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"
+
+download.file(trainUrl, "pml-training.csv")
+download.file(testUrl, "pml-testing.csv")
+
+training <- read.csv("pml-training.csv", header = TRUE, na.strings=c("NA","#DIV/0!",""))
+total_obs <- nrow(training)
+threshold <- total_obs*0.01
+testing <- read.csv("pml-testing.csv", header = TRUE, na.strings=c("NA","#DIV/0!",""))
+```
+
+On analyzing the training data and test data, it became evident that certain columns had too many missing fields. In test data there was no entry for those columns, so we simply remove those columns from the dataset.
+
+```{r cleaning_data}
+
+## Find columns without 'NAs'
+full_cols <- data.frame(sapply(training, function(y) sum(length(which(is.na(y))))< threshold))
+
+training_full <- training[, full_cols[,1]]
+testing_full <- testing[, full_cols[,1]]
+
+training_full <- training_full[complete.cases(training_full),] 
+```
+
+
+Preprocess the training and test datasets so that the date-time field is treated as date-time instead of factors. There is also only one level in the testing dataset, which cause problems later in the analysis. Moreover we make sure that all the corresponding fields of training and testing datasets have exactly same class/types.
+
+
+```{r match_train_test_types}
+
+testing_full$cvtd_timestamp <- as_datetime(testing_full$cvtd_timestamp)
+training_full$cvtd_timestamp <- as_datetime(training_full$cvtd_timestamp)
+
+levels(testing_full$new_window) <- c(levels(testing_full$new_window), "yes")
+
+```
+Next we partition the dataset into three parts, i.e. training, validation, and internal-testing datasets. We evaluate our models based on the validation and check our selected model on internal-testing dataset.
+
+```{r partition_dataset}
+indices <- createDataPartition(y=training_full$classe, p=0.7, list=FALSE)
+trainingAndValidation <- training_full[indices, ]; testingUnseen <- training_full[-indices, ]
+
+indices2 <- createDataPartition(y=trainingAndValidation$classe, p=0.7, list=FALSE)
+training <- trainingAndValidation[indices2, ]; validation <- trainingAndValidation[-indices2, ]
+
+```
+
+
+```{r drop_first_col}
+training_x <- training[, 2:59]
+training_y <- training[, 60]
+
+validation_x <- validation[, 2:59]
+validation_y <- validation[, 60]
+
+testingUnseen_x <- testingUnseen[, 2:59]
+testingUnseen_y <- testingUnseen[, 60]
+
+testing_x <- testing_full[, 2:59]
+testing_y <- testing_full[, 60]
+```
+
+I used Recursive Partitioning and Regression Trees (rpart) method first as a training method. Lets see how well it performs on the training dataset.
+
+```{r train_with_rpart}
+suppressMessages( rpfit <- train(x = training_x, y = training_y, method = "rpart"))
+print(rpfit$results$Accuracy)
+```
+
+As we can see the accuracy is not very encouraging. Lets see if ensembl of decision trees can perform better. Now I train the model with Random Forest and print the training results.
+
+```{r train_with_randomForest}
+ntrees <- 150
+rffit <- randomForest(x = training_x, y = training_y, method = "rf", ntree = ntrees)
+print(rffit$confusion)
+df <- data.frame(x = 1:ntrees, y=rffit$err.rate[,1])
+ggplot(df, aes(x, y, colour = y)) + xlab("Number of trees") + ylab("Out of sample error") + geom_point() + scale_color_gradient(low="skyblue2", high="palevioletred2")
+```
+
+The results are quite promising. The out-of-sample error rate also looks quite reasonable. Next we check the model with the validation dataset, and print its confusion matrix.
+
+```{r test_with_validation}
+vpredictions <- predict(rffit, validation_x)
+print(confusionMatrix(validation_y, vpredictions))
+```
+
+Now to determine out of sample error, we also evaluate our selected model with internal-testing dataset (which is unseen to any of the models so far).
+
+
+```{r test_with_internal-testing}
+itpredictions <- predict(rffit, testingUnseen_x)
+print(confusionMatrix(testingUnseen_y, itpredictions))
+```
+
+Finally, we do prediction for actual tesing dataset.
+```{r actual-testing}
+tpredictions <- predict(rffit, testing_x)
+print(tpredictions)
+```

@@ -17,3 +17,5 @@ Class A corresponds to the specified execution of the exercise, while the other 
 The above description about the dataset is taken from [here](http://web.archive.org/web/20161224072740/http:/groupware.les.inf.puc-rio.br/har) and more details about the paper can be found there as well. Please cite the following paper if you use this dataset, as they have generously allowed its usage for this kind of assignment. 
   
 Ugulino, W.; Cardador, D.; Vega, K.; Velloso, E.; Milidiu, R.; Fuks, H. [Wearable Computing: Accelerometers' Data Classification of Body Postures and Movements](http://web.archive.org/web/20161224072740/http:/groupware.les.inf.puc-rio.br/work.jsf?p1=10335). Proceedings of 21st Brazilian Symposium on Artificial Intelligence. Advances in Artificial Intelligence - SBIA 2012. In: Lecture Notes in Computer Science. , pp. 52-61. Curitiba, PR: Springer Berlin / Heidelberg, 2012. ISBN 978-3-642-34458-9. DOI: 10.1007/978-3-642-34459-6_6. 
+
+The analysis of this dataset can be found on this [link](http://htmlpreview.github.io/?https://github.com/owaismahmudi/HumanActivityMonitor/raw/master/humanActivityAnalysis.html)
